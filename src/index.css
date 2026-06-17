@@ -51,6 +51,76 @@ body {
   }
 }
 
+/* ── Glassmorphism / liquid glass ──────────────────────────────────────────── */
+
+.glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25),
+    0 12px 40px -12px rgba(0, 0, 0, 0.5);
+}
+
+.glass-soft {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Liquid glass — animated specular sheen + deep blur, for hero surfaces */
+.liquid-glass {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 40%, rgba(255, 120, 40, 0.04));
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 6px 0 rgba(0, 0, 0, 0.3),
+    0 24px 70px -20px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.07) 60deg,
+    transparent 140deg,
+    rgba(255, 120, 40, 0.06) 220deg,
+    transparent 300deg
+  );
+  animation: liquid-rotate 14s linear infinite;
+  pointer-events: none;
+}
+
+.liquid-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(120% 80% at 20% 0%, rgba(255, 255, 255, 0.12), transparent 55%);
+  pointer-events: none;
+}
+
+@keyframes liquid-rotate {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-glass::before { animation: none; }
+}
+
 .light-theme {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 244 / var(--tw-bg-opacity)) !important;

@@ -44,13 +44,14 @@ export function DietaryModal({ currentUser, isOpen, onClose, onSave, canClose = 
   };
 
   const handleSave = async () => {
-    if (!currentUser) return;
     setLoading(true);
     const prefs = {
       isVegetarian,
       allowedMeats: isVegetarian ? [] : allowedMeats
     };
-    await setDoc(doc(db, 'users', currentUser.uid), { dietary_preferences: prefs }, { merge: true });
+    if (currentUser) {
+      await setDoc(doc(db, 'users', currentUser.uid), { dietary_preferences: prefs }, { merge: true });
+    }
     onSave(prefs);
     setLoading(false);
     onClose();

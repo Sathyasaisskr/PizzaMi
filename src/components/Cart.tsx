@@ -78,7 +78,7 @@ export function Cart({ items, onUpdateQuantity, onRemoveItem, onCheckout, onCont
                      <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 mb-1">{item.store_name}</p>
                      <h3 className="font-bold text-lg text-stone-900">{item.item_name}</h3>
                    </div>
-                   <p className="font-black text-stone-900 text-lg">${(item.price_per_item * item.quantity).toFixed(2)}</p>
+                   <p className="font-black text-stone-900 text-lg">${(item.deliveryOption ? item.deliveryOption.priceBreakdown.subtotal : item.price_per_item * item.quantity).toFixed(2)}</p>
                  </div>
                  
                  {item.config && (
@@ -183,7 +183,7 @@ export function Cart({ items, onUpdateQuantity, onRemoveItem, onCheckout, onCont
 
             <button 
               onClick={onCheckout} 
-              className="w-full font-bold py-3.5 rounded-xl mt-6 shadow-lg flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition-all transform hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:shadow-md"
+              className="w-full font-bold py-3.5 rounded-xl mt-6 shadow-lg flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white transition-all transform hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:shadow-md shadow-[0_0_20px_rgba(255,50,0,0.3)] border border-orange-400/50"
             >
               <CreditCard className="w-5 h-5" /> Pay ${total.toFixed(2)}
             </button>

@@ -4,6 +4,12 @@ import { Quote, PizzaConfig, CartItem, DeliveryProviderOption, Coupon } from '..
 import { ChevronDown, Star, Heart, MessageSquareText, ShoppingCart, Send, Car, CheckCircle2, Ticket, ArrowRight, Table2 } from 'lucide-react';
 import { StoreLogo } from './StoreLogo';
 import { STORES } from '../lib/storeData';
+import { MARKETPLACE_STORES } from '../data/marketplace';
+
+function getStoreWebsite(chainId: string, chainName: string): string | undefined {
+  const ms = MARKETPLACE_STORES.find(s => s.id === chainId || s.name === chainName);
+  return ms?.website;
+}
 
 function getStoreDetails(chainId: string, chainName: string) {
   const store = STORES.find(s => s.id === chainId || s.name === chainName);
@@ -211,8 +217,9 @@ function QuoteCard({ quote, delay, isFavorite, onToggleFavorite, onAddReview, on
            const isPrimary = primaryOption?.providerId === opt.providerId;
            const isDoordash = opt.providerId === 'doordash';
            const isUber = opt.providerId === 'ubereats';
-           const bgClass = isPrimary ? (isUber ? 'bg-green-950/40 border-green-500/50 shadow-[0_0_15px_rgba(74,222,128,0.2)]' : isDoordash ? 'bg-red-950/40 border-red-500/50 shadow-[0_0_15px_rgba(248,113,113,0.2)]' : 'bg-blue-950/40 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]') : 'bg-black/20 border-white/5';
-           const textClass = isUber ? 'text-green-400' : isDoordash ? 'text-red-400' : 'text-blue-400';
+           const isGrubhub = opt.providerId === 'grubhub';
+           const bgClass = isPrimary ? (isUber ? 'bg-green-950/40 border-green-500/50 shadow-[0_0_15px_rgba(74,222,128,0.2)]' : isDoordash ? 'bg-red-950/40 border-red-500/50 shadow-[0_0_15px_rgba(248,113,113,0.2)]' : isGrubhub ? 'bg-orange-950/40 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.2)]' : 'bg-blue-950/40 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.2)]') : 'bg-black/20 border-white/5';
+           const textClass = isUber ? 'text-green-400' : isDoordash ? 'text-red-400' : isGrubhub ? 'text-orange-400' : 'text-blue-400';
            
            const finalTotal = calculateOptionTotal(opt);
            const activeCoupon = appliedCoupons[opt.providerId];
@@ -228,15 +235,16 @@ function QuoteCard({ quote, delay, isFavorite, onToggleFavorite, onAddReview, on
                    }}
                 >
                    {isPrimary && (
-                     <div className={`absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-white shadow-sm ${isUber ? 'bg-green-500' : isDoordash ? 'bg-red-500' : 'bg-stone-600'}`}>
+                     <div className={`absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-white shadow-sm ${isUber ? 'bg-green-500' : isDoordash ? 'bg-red-500' : isGrubhub ? 'bg-orange-500' : 'bg-stone-600'}`}>
                        <CheckCircle2 className="w-3 h-3" />
                      </div>
                    )}
                    <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-white shadow-sm border border-black/5 flex items-center justify-center overflow-hidden shrink-0">
-                         {isUber ? <span className="font-extrabold text-[10px] text-green-700">UBER</span> : 
-                          isDoordash ? <span className="font-extrabold text-[10px] text-red-600">DASH</span> : 
-                          opt.providerId === 'pickup' ? <Car className="w-4 h-4 text-stone-600" /> : 
+                         {isUber ? <span className="font-extrabold text-[10px] text-green-700">UBER</span> :
+                          isDoordash ? <span className="font-extrabold text-[10px] text-red-600">DASH</span> :
+                          isGrubhub ? <span className="font-extrabold text-[9px] text-orange-600">GRUB</span> :
+                          opt.providerId === 'pickup' ? <Car className="w-4 h-4 text-stone-600" /> :
                           <span className="font-extrabold text-[10px] text-blue-700">STORE</span>}
                       </div>
                       <div>
@@ -342,13 +350,16 @@ function QuoteCard({ quote, delay, isFavorite, onToggleFavorite, onAddReview, on
         })}
       </div>
 
-      <div className="mt-6 flex gap-3 pt-6 border-t border-white/10">
-        <button onClick={() => handleAddToCart(false)} className="flex-[0.4] bg-black/40 hover:bg-black/60 border border-white/10 text-white text-sm font-black py-4 rounded-2xl transition-colors flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
-          <ShoppingCart className="w-4 h-4" /> Add
-        </button>
-        <button onClick={() => handleAddToCart(true)} disabled={!primaryOption} className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white text-sm font-black py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(255,50,0,0.4)] hover:shadow-[0_0_30px_rgba(255,50,0,0.6)] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider flex justify-center items-center gap-2 border border-orange-400/50">
-          Compare & Order <ArrowRight className="w-4 h-4" />
-        </button>
+      <div className="mt-6 pt-6 border-t border-white/10 space-y-2">
+        {/* Primary add to cart */}
+        <div className="flex gap-3">
+          <button onClick={() => handleAddToCart(false)} className="flex-[0.4] bg-black/40 hover:bg-black/60 border border-white/10 text-white text-sm font-black py-3.5 rounded-2xl transition-colors flex items-center justify-center gap-2">
+            <ShoppingCart className="w-4 h-4" /> Add to Cart
+          </button>
+          <button onClick={() => handleAddToCart(true)} disabled={!primaryOption} className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white text-sm font-black py-3.5 rounded-2xl transition-all shadow-[0_0_20px_rgba(255,50,0,0.4)] hover:scale-[1.02] disabled:opacity-50 uppercase tracking-wider flex justify-center items-center gap-2 border border-orange-400/50">
+            Order Now <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Reviews Modal */}
@@ -396,6 +407,7 @@ function QuoteCard({ quote, delay, isFavorite, onToggleFavorite, onAddReview, on
                                <td className="px-4 py-3 font-bold text-stone-300 flex items-center gap-2">
                                   {opt.providerId === 'doordash' && <span className="w-2 h-2 rounded-full bg-red-500" />}
                                   {opt.providerId === 'ubereats' && <span className="w-2 h-2 rounded-full bg-green-500" />}
+                                  {opt.providerId === 'grubhub' && <span className="w-2 h-2 rounded-full bg-orange-500" />}
                                   {opt.providerId === 'pickup' && <span className="w-2 h-2 rounded-full bg-stone-500" />}
                                   {opt.providerId === 'store' && <span className="w-2 h-2 rounded-full bg-blue-500" />}
                                   {opt.providerName}

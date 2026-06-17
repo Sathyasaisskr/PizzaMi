@@ -13,21 +13,22 @@ export function Checkout({ cart, totalToCharge, onCancel, onConfirmOrder }: Chec
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
+  const [error, setError] = useState('');
+
   const isDelivery = cart.some(item => ['store-delivery', 'third-party', 'doordash-drive', 'uber-direct'].includes(item.delivery_type));
 
   const handlePay = async () => {
     if (isDelivery && !address.trim()) {
-      alert("Please enter a delivery address.");
+      setError("Please enter a delivery address.");
       return;
     }
+    setError('');
     setIsProcessing(true);
     try {
-      // Simulate demo payment processing delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       await onConfirmOrder(address, notes);
     } catch (e) {
-      alert("Payment failed. Please try again.");
+      setError("Payment failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -40,6 +41,11 @@ export function Checkout({ cart, totalToCharge, onCancel, onConfirmOrder }: Chec
       <div className="bg-black/40 backdrop-blur-xl rounded-[2rem] p-8 shadow-[0_15px_30px_rgba(0,0,0,0.5)] border border-white/10 mb-6 relative overflow-hidden group">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
         
+        {error && (
+          <div className="bg-red-950/40 border border-red-500/30 text-red-300 p-4 rounded-xl mb-4 text-sm font-medium relative z-10">
+            {error}
+          </div>
+        )}
         <div className="bg-blue-950/40 border border-blue-500/30 text-blue-300 p-4 rounded-xl mb-8 flex gap-3 text-sm font-medium relative z-10 shadow-inner">
            <Info className="w-5 h-5 flex-shrink-0 text-blue-400" />
            <p>This is a safe demo mode. No real charges will be made. Your order will be marked as paid via demo flow.</p>

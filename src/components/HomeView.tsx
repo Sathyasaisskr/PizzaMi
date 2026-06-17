@@ -1,21 +1,58 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Search, MapPin, Mic, ArrowRight, Pizza, TrendingUp, Zap, DollarSign, Clock, ShieldCheck, PieChart, Users } from 'lucide-react';
-import { ComparisonCards } from './ComparisonCards';
-import { Pizza3DBuilder } from './Pizza3DBuilder';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  MapPin, ChevronRight, ChevronDown, ChevronUp, Map, Navigation,
+  Pizza, BarChart3, Tag, X, Sparkles,
+} from 'lucide-react';
+import { SmartSearchBar, ParsedQuery } from './SmartSearchBar';
+import { StoreGrid } from './StoreGrid';
+import { InteractiveMap } from './InteractiveMap';
+import { StoreDetailSheet } from './StoreDetailSheet';
+import { Footer } from './Footer';
 import { PizzaConfig, Quote, CartItem } from '../types';
-import riderSvg from '../lib/rider.svg';
+import { useApp } from '../store/AppContext';
+import { RECOMMENDATION_SLICES, MarketplaceStore } from '../data/marketplace';
+
+// ── Michigan cities ──────────────────────────────────────────────────────────
+
+const MI_CITIES = [
+  { label: 'All MI', value: 'All' },
+  { label: 'Detroit', value: 'Detroit' },
+  { label: 'Dearborn', value: 'Dearborn' },
+  { label: 'Ann Arbor', value: 'Ann Arbor' },
+  { label: 'Lansing', value: 'Lansing' },
+  { label: 'Grand Rapids', value: 'Grand Rapids' },
+  { label: 'Flint', value: 'Flint' },
+  { label: 'Warren', value: 'Warren' },
+];
+
+const DEAL_TICKER = [
+  '🍕  Shamz Pizza · Large Pepperoni now $11.99',
+  "🏷️  Mario's · Buy One Get One Free — Tuesdays only",
+  '⚡  Pizza Palace · Free delivery on orders over $20',
+  '🔥  Detroit Deep Dish · 30% off all lunch specials',
+  '💰  Ann Arbor Pizza Co. · $5 off any large pizza',
+];
 
 const DEFAULT_CONFIG: PizzaConfig = {
-  size: "Large",
-  crust: "Hand Tossed",
-  sauce: "Robust Inspired Tomato Sauce",
-  cheese: ["Mozzarella"],
-  meats: [],
-  veggies: [],
-  extras: [],
-  quantity: 1
+  size: 'Large', crust: 'Hand Tossed',
+  sauce: 'Robust Inspired Tomato Sauce',
+  cheese: ['Mozzarella'], meats: [], veggies: [], extras: [], quantity: 1,
 };
+
+function queryToConfig(query: string, parsed?: ParsedQuery): PizzaConfig {
+  const q = query.toLowerCase();
+  return {
+    ...DEFAULT_CONFIG,
+    size: parsed?.size as any || (q.includes('large') ? 'Large' : q.includes('small') ? 'Small' : 'Large'),
+    crust: parsed?.crust as any || (q.includes('thin') ? 'Crunchy Thin Crust' : 'Hand Tossed'),
+    sauce: q.includes('bbq') ? 'BBQ Sauce' : q.includes('alfredo') ? 'Alfredo Sauce' : 'Robust Inspired Tomato Sauce',
+    meats: parsed?.toppings || (q.includes('pepperoni') ? ['Pepperoni'] : q.includes('chicken') ? ['Premium Chicken'] : []),
+    veggies: (q.includes('veggie') || q.includes('vegan')) ? ['Mushrooms', 'Onions', 'Green Peppers'] : [],
+  };
+}
+
+// ── Props ────────────────────────────────────────────────────────────────────
 
 interface HomeViewProps {
   onCustomize: (config: PizzaConfig) => void;
@@ -26,184 +63,280 @@ interface HomeViewProps {
   favoriteStores: string[];
   onToggleFavoriteStore: (chainId: string) => void;
   onAddReview: (chainId: string, rating: number, text: string) => void;
-  onAddToCart: (item: Omit<CartItem, 'id'>, redirect: boolean) => void;
+  onAddToCart: (item: Omit<CartItem, 'id'>, redirect?: boolean) => void;
   userPreferences?: { isVegetarian: boolean; allowedMeats: string[] } | null;
 }
 
-export function HomeView({ onCustomize, onCompare, onNavigate, currentConfig, quotes, favoriteStores, onToggleFavoriteStore, onAddReview, onAddToCart, userPreferences }: HomeViewProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+// ── Quick action card ─────────────────────────────────────────────────────────
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    
-    const newConfig: PizzaConfig = {
-      ...DEFAULT_CONFIG,
-      meats: searchQuery.toLowerCase().includes('pepperoni') ? ['Pepperoni'] : (searchQuery.toLowerCase().includes('chicken') ? ['Premium Chicken'] : []),
-      veggies: searchQuery.toLowerCase().includes('veggie') ? ['Mushrooms', 'Onions', 'Green Peppers'] : [],
-      sauce: searchQuery.toLowerCase().includes('alfredo') ? 'Alfredo Sauce' : (searchQuery.toLowerCase().includes('bbq') ? 'BBQ Sauce' : 'Robust Inspired Tomato Sauce'),
-      crust: searchQuery.toLowerCase().includes('thin') ? 'Crunchy Thin Crust' : 'Hand Tossed'
-    };
-    onCompare(newConfig);
+function QuickAction({ icon: Icon, title, sub, onClick }: {
+  icon: React.ElementType; title: string; sub: string; onClick: () => void;
+}) {
+  return (
+    <motion.button
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="glass rounded-3xl p-6 text-left group transition-colors hover:border-white/25"
+    >
+      <div className="w-11 h-11 rounded-2xl glass-soft flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+        <Icon className="w-5 h-5 text-orange-300" />
+      </div>
+      <p className="text-sm font-black text-white mb-1">{title}</p>
+      <p className="text-xs text-stone-400 leading-relaxed">{sub}</p>
+      <div className="flex items-center gap-1 text-[11px] font-bold text-orange-300/80 mt-4 group-hover:gap-2 transition-all">
+        Open <ChevronRight className="w-3.5 h-3.5" />
+      </div>
+    </motion.button>
+  );
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
+
+export function HomeView({
+  onCompare, onNavigate, currentConfig, onAddToCart,
+}: HomeViewProps) {
+  const { state, setSearch } = useApp();
+  const [activeCity, setActiveCity] = useState('All');
+  const [sheetStore, setSheetStore] = useState<MarketplaceStore | null>(null);
+  const [mapExpanded, setMapExpanded] = useState(false);
+  const [showStores, setShowStores] = useState(false);
+  const [tickerIdx, setTickerIdx] = useState(0);
+  const storesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = setInterval(() => setTickerIdx(i => (i + 1) % DEAL_TICKER.length), 3800);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleSearch = (query: string, parsed?: ParsedQuery) => {
+    setSearch(query);
+    if (query.trim()) onCompare(queryToConfig(query, parsed));
   };
 
+  const revealStores = () => {
+    setShowStores(true);
+    setTimeout(() => storesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  };
+
+  const storeCount = state.searchResults.length;
+
   return (
-    <div className="w-full flex-1 flex flex-col pt-8 pb-32 relative overflow-hidden">
-      {/* Background Image Container */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src="/rider-bg.png" 
-          alt="Night City Rain Pizza Rider" 
-          className="w-full h-full object-cover opacity-30"
-          onError={(e) => {
-            // Fallback if local upload is not found yet
-            e.currentTarget.src = "/rider-bg.jpg";
-            e.currentTarget.onerror = (e2) => {
-               const target = e2.currentTarget as HTMLImageElement;
-               target.src = riderSvg;
-               target.className = "absolute top-[-200px] right-[-200px] w-[800px] h-[800px] opacity-10 pointer-events-none z-0";
-            };
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/80 to-black w-0 h-0 overflow-hidden"></div>
+    <div className="w-full flex-1 flex flex-col pb-28 relative overflow-x-hidden">
+
+      {/* ── Ambient background blobs ───────────────────────────────────────── */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-32 -left-24 w-[28rem] h-[28rem] rounded-full bg-orange-600/15 blur-[120px]" />
+        <div className="absolute top-40 -right-32 w-[32rem] h-[32rem] rounded-full bg-red-600/12 blur-[140px]" />
+        <div className="absolute bottom-0 left-1/3 w-[26rem] h-[26rem] rounded-full bg-amber-500/8 blur-[130px]" />
       </div>
-      {/* SECTION 1 - HERO SEARCH */}
-      <section className="w-full max-w-4xl mx-auto text-center mb-16 px-4 animate-in fade-in slide-in-from-bottom-4 duration-500 relative z-10">
-        <h1 className="text-4xl md:text-6xl font-black text-white text-shadow-sm mb-6 tracking-tight leading-tight">
-          Find The Cheapest Pizza <span className="text-red-500">Near You</span>
-        </h1>
-        <p className="text-lg md:text-xl text-stone-300 font-medium max-w-2xl mx-auto drop-shadow mb-10">
-          Compare real prices, delivery fees, taxes, pickup times, and deals from nearby pizza stores.
-        </p>
 
-        {/* Big Search Bar */}
-        <form onSubmit={handleSearch} className="relative w-full max-w-3xl mx-auto mb-8 group/search">
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 via-red-500/20 to-purple-500/20 rounded-full blur-xl group-focus-within/search:opacity-100 opacity-50 transition-opacity duration-500 pointer-events-none" />
-          <div className="flex items-center bg-black/40 backdrop-blur-2xl border border-white/20 rounded-full p-2 relative z-10 transition-all focus-within:scale-[1.02] focus-within:border-orange-500/50 focus-within:shadow-[0_0_30px_rgba(255,100,0,0.3)] duration-300">
-            <div className="flex items-center px-4 border-r border-white/10 text-stone-300 hidden sm:flex">
-              <MapPin className="w-5 h-5 mr-2" />
-              <span className="font-medium whitespace-nowrap text-sm">Detroit, MI</span>
-            </div>
-            <div className="flex-1 flex items-center px-4">
-              <Search className="w-5 h-5 text-stone-400 mr-3" />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="What pizza are you craving today?"
-                className="w-full bg-transparent text-white placeholder-stone-500 font-medium focus:outline-none py-3"
-              />
-            </div>
-            <button type="button" className="p-3 text-stone-400 hover:text-white transition-colors mr-1 group">
-              <div className="bg-white/5 p-2 rounded-full group-hover:bg-white/10 transition-colors">
-                <Mic className="w-5 h-5" />
+      {/* ── Live deal ticker ───────────────────────────────────────────────── */}
+      <button
+        onClick={() => onNavigate('local-deals')}
+        className="relative z-20 w-full max-w-2xl mx-auto mt-5 px-2"
+      >
+        <div className="glass rounded-full flex items-center gap-3 px-4 py-2">
+          <span className="text-[9px] font-black text-orange-300 uppercase tracking-widest shrink-0 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" /> Live
+          </span>
+          <div className="flex-1 overflow-hidden text-left">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={tickerIdx}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25 }}
+                className="text-xs font-semibold text-stone-200 truncate"
+              >
+                {DEAL_TICKER[tickerIdx]}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+          <ChevronRight className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+        </div>
+      </button>
+
+      {/* ── Hero ──────────────────────────────────────────────────────────── */}
+      <section className="relative z-10 w-full max-w-3xl mx-auto px-5 pt-16 pb-10 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="inline-flex items-center gap-2 glass-soft text-stone-300 text-[10px] font-black px-4 py-1.5 rounded-full mb-8"
+        >
+          <Sparkles className="w-3 h-3 text-orange-300" />
+          Michigan's Pizza Price Comparison · {RECOMMENDATION_SLICES.mostOrdered().length} stores live
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.06 }}
+          className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.05] mb-5"
+        >
+          The Cheapest{' '}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-orange-400 to-red-500">
+            Pizza
+          </span>
+          <br />in Michigan
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-stone-400 text-base max-w-md mx-auto mb-10 leading-relaxed"
+        >
+          Compare live prices, delivery fees, and deals from every pizza shop near you.
+        </motion.p>
+
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+          <SmartSearchBar onSearch={handleSearch} location={activeCity === 'All' ? 'Michigan' : `${activeCity}, MI`} />
+        </motion.div>
+      </section>
+
+      {/* ── Quick actions ──────────────────────────────────────────────────── */}
+      <section className="relative z-10 w-full max-w-4xl mx-auto px-5 mb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <QuickAction icon={Pizza} title="Build a Pizza" sub="Design it, see live prices everywhere." onClick={() => onNavigate('pizza-builder')} />
+          <QuickAction icon={BarChart3} title="Compare Prices" sub="Side-by-side cost across stores." onClick={() => onNavigate('compare')} />
+          <QuickAction icon={Tag} title="Deals & Alerts" sub="Live offers and price alerts." onClick={() => onNavigate('local-deals')} />
+        </div>
+      </section>
+
+      {/* ── Nearby stores reveal ───────────────────────────────────────────── */}
+      <section ref={storesRef} className="relative z-10 w-full max-w-6xl mx-auto px-5 scroll-mt-6">
+        <AnimatePresence mode="wait">
+          {!showStores ? (
+            <motion.div
+              key="reveal-cta"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="liquid-glass rounded-[2.5rem] px-8 py-16 sm:py-20 text-center max-w-2xl mx-auto"
+            >
+              <div className="w-16 h-16 rounded-3xl glass mx-auto flex items-center justify-center mb-6">
+                <Navigation className="w-7 h-7 text-orange-300" />
               </div>
-            </button>
-            <button type="submit" className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-bold py-4 px-8 rounded-full shadow-[0_0_20px_rgba(255,50,0,0.4)] hover:shadow-[0_0_30px_rgba(255,50,0,0.6)] transition-all flex items-center">
-              Search
-            </button>
-          </div>
-          
-          {/* Quick Links below search */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-            {['Best Deal Today', 'Fastest Delivery', 'Lowest Total Cost', 'Pickup Specials'].map(tag => (
-              <button key={tag} type="button" className="text-xs sm:text-sm font-bold text-stone-300 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full py-2 px-4 backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all">
-                {tag}
-              </button>
-            ))}
-          </div>
-        </form>
+              <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">Find Pizza Near You</h2>
+              <p className="text-stone-400 text-sm max-w-sm mx-auto mb-8 leading-relaxed">
+                Discover open pizza shops across Michigan, sorted by price and delivery time.
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={revealStores}
+                className="inline-flex items-center gap-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-black text-sm px-8 py-4 rounded-2xl shadow-[0_10px_40px_-8px_rgba(220,38,38,0.6)]"
+              >
+                <Navigation className="w-4 h-4" /> Find Nearby Stores
+              </motion.button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="stores"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+            >
+              {/* City filter + header */}
+              <div className="glass rounded-3xl p-5 sm:p-6 mb-8">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h2 className="text-lg font-black text-white flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-orange-300" />
+                      Stores Near You
+                    </h2>
+                    <p className="text-[11px] text-stone-500 mt-1">
+                      {activeCity !== 'All' ? `${activeCity}, MI` : 'Michigan'} · {storeCount} open
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowStores(false)}
+                    className="w-9 h-9 rounded-full glass-soft flex items-center justify-center text-stone-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {MI_CITIES.map(city => (
+                    <button
+                      key={city.value}
+                      onClick={() => { setActiveCity(city.value); setSearch(''); }}
+                      className={`text-[11px] font-bold px-3.5 py-2 rounded-full transition-all ${
+                        activeCity === city.value
+                          ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-[0_4px_14px_-4px_rgba(220,38,38,0.6)]'
+                          : 'glass-soft text-stone-400 hover:text-white'
+                      }`}
+                    >
+                      {city.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-        {/* Live Comparison Results */}
-        {currentConfig && quotes.length > 0 && (
-          <motion.div 
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             className="w-full mt-12 text-left"
-          >
-             <h3 className="text-xl font-bold text-white mb-6">Live Comparison Results</h3>
-             <ComparisonCards 
-                quotes={quotes}
-                favoriteStores={favoriteStores}
-                onToggleFavoriteStore={onToggleFavoriteStore}
-                onAddReview={onAddReview}
+              <StoreGrid
                 onAddToCart={onAddToCart}
-                currentConfig={currentConfig}
-             />
-          </motion.div>
-        )}
+                onCompare={onCompare}
+                onNavigate={onNavigate}
+                onOpenStore={setSheetStore}
+              />
+
+              {/* Pizza map */}
+              <div className="mt-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-black text-white flex items-center gap-2">
+                    <Map className="w-4 h-4 text-orange-300" /> Pizza Map
+                    <span className="text-[8px] font-black glass-soft text-orange-300 px-2 py-0.5 rounded-full">LIVE</span>
+                  </h2>
+                  <button
+                    onClick={() => setMapExpanded(e => !e)}
+                    className="flex items-center gap-1 text-[11px] font-bold text-stone-500 hover:text-stone-300 transition-colors"
+                  >
+                    {mapExpanded ? <><ChevronUp className="w-3.5 h-3.5" /> Collapse</> : <><ChevronDown className="w-3.5 h-3.5" /> Expand</>}
+                  </button>
+                </div>
+                <AnimatePresence>
+                  {mapExpanded ? (
+                    <motion.div
+                      key="map-expanded"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 420, opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+                      className="overflow-hidden rounded-3xl glass"
+                    >
+                      <InteractiveMap config={currentConfig} onSelectStore={() => {}} onCompare={onCompare} onOpenStore={setSheetStore} />
+                    </motion.div>
+                  ) : (
+                    <motion.button
+                      key="map-collapsed"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      onClick={() => setMapExpanded(true)}
+                      className="w-full h-28 glass-soft rounded-3xl flex items-center justify-center gap-3 text-stone-500 hover:text-stone-300 transition-colors group"
+                    >
+                      <Map className="w-5 h-5 group-hover:text-orange-300 transition-colors" />
+                      <span className="text-xs font-bold">Explore the live pizza map</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
-      {/* SECTION 4 - BUILD YOUR OWN PIZZA */}
-      <section className="w-full max-w-5xl mx-auto mb-20 px-4 relative z-10">
-        <div className="bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-8 sm:p-12 overflow-hidden relative shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex flex-col md:flex-row items-center justify-between gap-8 group">
-          {/* Subtle neon glow on hover */}
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-          
-          <div className="relative z-10 max-w-xl text-center md:text-left order-2 md:order-1">
-             <h2 className="text-3xl font-black text-white mb-4">Can't Find It? <span className="text-red-500">Build Your Pizza</span></h2>
-             <p className="text-stone-300 mb-8 text-lg font-medium">Design your exact craving in our interactive 3D builder and compare prices across all local chains instantly.</p>
-             <button 
-                onClick={() => onNavigate('pizza-builder')}
-                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-black py-4 px-8 rounded-2xl shadow-[0_0_30px_rgba(255,50,0,0.4)] hover:shadow-[0_0_40px_rgba(255,50,0,0.6)] transition-all hover:scale-105 active:scale-95 flex items-center justify-center md:justify-start gap-3 w-full md:w-auto mx-auto md:mx-0 border border-orange-400/50"
-             >
-               <Pizza className="w-6 h-6" />
-               Start Building
-               <ArrowRight className="w-5 h-5 ml-2" />
-             </button>
-          </div>
+      {/* ── Modals & sheets ───────────────────────────────────────────────── */}
+      <StoreDetailSheet
+        store={sheetStore}
+        onClose={() => setSheetStore(null)}
+        onAddToCart={onAddToCart}
+      />
 
-          <div className="relative z-10 w-full max-w-xs md:w-1/2 aspect-square order-1 md:order-2 flex items-center justify-center pointer-events-none pb-12">
-             <div className="transform scale-90 md:scale-105">
-                <Pizza3DBuilder config={{
-                  ...DEFAULT_CONFIG,
-                  meats: ['Pepperoni', 'Sausage'],
-                  veggies: ['Mushrooms', 'Green Peppers']
-                }} />
-             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 5 - SAVE MONEY SECTION */}
-      <section className="w-full max-w-6xl mx-auto mb-20 px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-           {[
-             { label: 'Average Savings Today', value: '$6.21', icon: DollarSign, color: 'text-green-500' },
-             { label: 'Stores Compared', value: '43', icon: ShieldCheck, color: 'text-blue-500' },
-             { label: 'Active Deals', value: '127', icon: Zap, color: 'text-yellow-500' },
-             { label: 'Users Saving Money', value: '12.4k', icon: Users, color: 'text-purple-500' }
-           ].map((stat, i) => (
-             <div key={i} className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 text-center transform transition-transform hover:-translate-y-1 hover:bg-white/10">
-               <stat.icon className={`w-8 h-8 mx-auto mb-4 ${stat.color}`} />
-               <div className="text-3xl font-black text-white mb-1">{stat.value}</div>
-               <div className="text-sm font-bold text-stone-400">{stat.label}</div>
-             </div>
-           ))}
-        </div>
-      </section>
-
-      {/* SECTION 6 - FEATURES */}
-      <section className="w-full max-w-6xl mx-auto px-4 text-center">
-         <h2 className="text-2xl font-black text-white mb-10">Why Use MiSlice?</h2>
-         <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-           {[
-             { label: 'Real-Time Pricing', icon: Clock },
-             { label: 'Verified Store Prices', icon: ShieldCheck },
-             { label: 'Delivery Comparison', icon: Zap },
-             { label: 'Pickup Comparison', icon: MapPin },
-             { label: 'Smart Recommendations', icon: PieChart }
-           ].map((feature, i) => (
-             <div key={i} className="flex flex-col items-center">
-               <div className="w-16 h-16 bg-stone-800/80 backdrop-blur-sm border border-stone-700 rounded-2xl flex items-center justify-center mb-4 text-stone-300">
-                 <feature.icon className="w-8 h-8" />
-               </div>
-               <span className="font-bold text-sm text-stone-300 max-w-[120px] leading-tight">{feature.label}</span>
-             </div>
-           ))}
-         </div>
-      </section>
-
+      <Footer />
     </div>
   );
 }

@@ -45,7 +45,7 @@ export const mockChains: ChainPricingData[] = [
       { id: '4', user: 'Sam', rating: 3, text: 'Pizza was okay, delivery time a bit long.' },
       { id: '5', user: 'Taylor', rating: 4, text: 'Stuffed crust is legendary.' }
     ],
-    deliveryOptions: { store: true, pickup: true, doordash: true, ubereats: true, grubhub: false },
+    deliveryOptions: { store: true, pickup: true, doordash: true, ubereats: true, grubhub: true },
     distance: "1.8 miles"
   },
   {
@@ -60,7 +60,7 @@ export const mockChains: ChainPricingData[] = [
     reviews: [
       { id: '6', user: 'Jordan', rating: 5, text: 'Detroit style deep dish is unbeatable!' }
     ],
-    deliveryOptions: { store: false, pickup: true, doordash: true, ubereats: true, grubhub: false },
+    deliveryOptions: { store: false, pickup: true, doordash: true, ubereats: true, grubhub: true },
     distance: "0.8 miles"
   },
   {
@@ -73,7 +73,7 @@ export const mockChains: ChainPricingData[] = [
     toppingPrice: 1.75, 
     storeDeliveryFee: 0,
     reviews: [],
-    deliveryOptions: { store: false, pickup: true, doordash: true, ubereats: true, grubhub: false },
+    deliveryOptions: { store: false, pickup: true, doordash: true, ubereats: true, grubhub: true },
     distance: "3.2 miles"
   }
 ];
@@ -84,6 +84,9 @@ const mockCoupons: Record<string, Coupon[]> = {
   ],
   ubereats: [
     { code: 'SAVE5', description: 'Save $5 on orders', discountType: 'fixed', discountValue: 5 }
+  ],
+  grubhub: [
+    { code: 'GRUB7', description: '$7 off your first order', discountType: 'fixed', discountValue: 7 }
   ],
   store: [
     { code: 'FREEDEL', description: 'Free delivery today', discountType: 'free_delivery', discountValue: 0 }
@@ -130,6 +133,9 @@ export function calculateQuotes(config: PizzaConfig, deliveryPreference: Deliver
          } else if (providerId === 'ubereats') {
            deliveryFee = 5.00;
            estMin = 28; estMax = 38;
+         } else if (providerId === 'grubhub') {
+           deliveryFee = 3.49;
+           estMin = 26; estMax = 36;
          }
          serviceFee = subtotal * 0.15;
       }
@@ -172,6 +178,7 @@ export function calculateQuotes(config: PizzaConfig, deliveryPreference: Deliver
        if (chain.deliveryOptions.store) deliveryOptions.push(createOption('store', 'Store Delivery', false));
        if (chain.deliveryOptions.ubereats) deliveryOptions.push(createOption('ubereats', 'Uber Eats', true));
        if (chain.deliveryOptions.doordash) deliveryOptions.push(createOption('doordash', 'DoorDash', true));
+       if (chain.deliveryOptions.grubhub) deliveryOptions.push(createOption('grubhub', 'Grubhub', true));
     }
     
     // Evaluate options to find cheapest/fastest

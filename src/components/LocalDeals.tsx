@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PizzaConfig, DeliveryType, Quote, Review, CartItem } from '../types';
-import { MapPin, Search, Clock, Navigation, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { MapPin, Search, Clock, Navigation, Plus, Minus, ShoppingCart, Bell, Tag, TrendingDown, Zap, Star, Gift, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../lib/firebase';
 import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
@@ -32,7 +32,77 @@ interface LocalDeal {
   distance?: number;
 }
 
+// ── Alert preferences panel ──────────────────────────────────────────────────
+
+const ALERT_PREFS = [
+  { key: 'priceDrops', label: 'Price Drop Alerts', desc: "When a pizza you've searched gets cheaper", icon: TrendingDown, color: 'text-green-400' },
+  { key: 'flashDeals', label: 'Flash Deals', desc: 'Time-limited offers from nearby stores', icon: Zap, color: 'text-yellow-400' },
+  { key: 'weeklyDeals', label: 'Weekly Deal Digest', desc: 'Best deals every Monday morning', icon: Tag, color: 'text-orange-400' },
+  { key: 'rewardPoints', label: 'Reward Points', desc: 'When you earn or can redeem points', icon: Gift, color: 'text-pink-400' },
+  { key: 'newStores', label: 'New Stores Near You', desc: 'When a new pizza shop joins MiSlice in Michigan', icon: MapPin, color: 'text-red-400' },
+  { key: 'orderUpdates', label: 'Order Status Updates', desc: 'When your order is confirmed or delivered', icon: ShoppingCart, color: 'text-blue-400' },
+];
+
+function ToggleSwitch({ on, onChange }: { on: boolean; onChange: () => void }) {
+  return (
+    <button onClick={onChange} className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${on ? 'bg-red-600' : 'bg-stone-700'}`}>
+      <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all shadow ${on ? 'left-6' : 'left-1'}`} />
+    </button>
+  );
+}
+
+function AlertPreferences() {
+  const [prefs, setPrefs] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('miSliceAlertPrefs') || '{}'); }
+    catch { return {}; }
+  });
+
+  const defaults: Record<string, boolean> = {
+    priceDrops: true, flashDeals: true, weeklyDeals: false,
+    rewardPoints: true, newStores: false, orderUpdates: true,
+  };
+
+  const toggle = (key: string) => {
+    const next = { ...defaults, ...prefs, [key]: !(prefs[key] ?? defaults[key]) };
+    setPrefs(next);
+    localStorage.setItem('miSliceAlertPrefs', JSON.stringify(next));
+  };
+
+  return (
+    <div className="w-full max-w-2xl mx-auto py-6 space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Bell className="w-4 h-4 text-orange-400" />
+        <p className="text-sm font-black text-white">My Deal Preferences</p>
+      </div>
+      <p className="text-xs text-stone-500 mb-4">Choose what kind of alerts you want. All preferences are saved locally.</p>
+
+      <div className="bg-white/4 border border-white/8 rounded-2xl overflow-hidden divide-y divide-white/5">
+        {ALERT_PREFS.map(pref => {
+          const Icon = pref.icon;
+          const on = prefs[pref.key] ?? defaults[pref.key];
+          return (
+            <div key={pref.key} className="flex items-center gap-4 px-4 py-3.5">
+              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center shrink-0">
+                <Icon className={`w-3.5 h-3.5 ${pref.color}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-white">{pref.label}</p>
+                <p className="text-[10px] text-stone-600">{pref.desc}</p>
+              </div>
+              <ToggleSwitch on={on} onChange={() => toggle(pref.key)} />
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-center text-[10px] text-stone-700 pt-2">Preferences are stored on this device only.</p>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export function LocalDeals({ onAddToCart }: { onAddToCart: (item: Omit<CartItem, 'id'>, redirect: boolean) => void }) {
+  const [activeTab, setActiveTab] = useState<'deals' | 'preferences'>('deals');
   const [deals, setDeals] = useState<LocalDeal[]>([]);
   const [locationError, setLocationError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -103,40 +173,64 @@ export function LocalDeals({ onAddToCart }: { onAddToCart: (item: Omit<CartItem,
   }, []);
 
   return (
-    <div className="w-full max-w-5xl mx-auto z-10 relative pt-8 pb-16">
-      <div className="flex items-center justify-between mb-8">
+    <div className="w-full max-w-5xl mx-auto z-10 relative pt-6 pb-16">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <MapPin className="w-8 h-8 text-red-500" />
-            Local Deals
+          <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <Tag className="w-6 h-6 text-red-400" />
+            Deals & Alerts
           </h2>
-          <p className="text-stone-300 font-medium mt-1">Real-time discounts from stores near you.</p>
+          <p className="text-stone-500 text-xs mt-0.5">Michigan · Real-time discounts + your price alert preferences</p>
         </div>
       </div>
 
-      {locationError && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl mb-6 text-sm font-bold flex items-center gap-2">
-          <span>{locationError}</span>
-        </div>
-      )}
+      {/* Tabs */}
+      <div className="flex gap-1 bg-white/5 border border-white/8 p-1 rounded-2xl mb-6 max-w-xs">
+        <button
+          onClick={() => setActiveTab('deals')}
+          className={`flex-1 py-2 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 ${activeTab === 'deals' ? 'bg-white/12 text-white' : 'text-stone-500 hover:text-stone-300'}`}
+        >
+          <Tag className="w-3.5 h-3.5" /> Local Deals
+        </button>
+        <button
+          onClick={() => setActiveTab('preferences')}
+          className={`flex-1 py-2 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 ${activeTab === 'preferences' ? 'bg-white/12 text-white' : 'text-stone-500 hover:text-stone-300'}`}
+        >
+          <Bell className="w-3.5 h-3.5" /> My Alerts
+        </button>
+      </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-        </div>
-      ) : deals.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-stone-200/50">
-          <p className="text-stone-500 font-bold mb-2">No active deals found near you right now.</p>
-          <p className="text-sm text-stone-400">Store owners haven't posted any local discounts today. Check back later!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <AnimatePresence>
-             {deals.map((deal, i) => (
-                <DealCard key={deal.id} deal={deal} i={i} onAddToCart={onAddToCart} />
-             ))}
-          </AnimatePresence>
-        </div>
+      {activeTab === 'preferences' && <AlertPreferences />}
+
+      {activeTab === 'deals' && (
+        <>
+          {locationError && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 px-4 py-3 rounded-xl mb-5 text-xs font-bold">
+              {locationError}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+            </div>
+          ) : deals.length === 0 ? (
+            <div className="text-center py-20 bg-white/4 rounded-3xl border border-white/8 border-dashed">
+              <Tag className="w-8 h-8 mx-auto text-stone-600 mb-3" />
+              <p className="text-stone-500 font-bold text-sm mb-1">No active deals right now.</p>
+              <p className="text-stone-600 text-xs">Store owners in Michigan haven't posted discounts today — check back soon.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <AnimatePresence>
+                {deals.map((deal, i) => (
+                  <DealCard key={deal.id} deal={deal} i={i} onAddToCart={onAddToCart} />
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

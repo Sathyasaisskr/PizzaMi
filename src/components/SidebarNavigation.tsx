@@ -1,9 +1,15 @@
 import React from 'react';
-import { Home, Search, ChefHat, Heart, ShoppingBag, ShoppingCart, Settings, Info, Menu, X, Store, UserCircle, LogOut, Tag } from 'lucide-react';
-import { User } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import {
+  Home, ChefHat, ShoppingBag, Info, Menu, X, Tag, Store,
+  LogOut, BarChart2, Map, User, Gift, Bell, Star, ChevronRight,
+  Pizza, Zap,
+} from 'lucide-react';
 
-export type ViewState = 'home' | 'compare' | 'pizza-builder' | 'saved-pizzas' | 'orders' | 'cart' | 'checkout' | 'admin-dashboard' | 'how-it-works' | 'local-deals' | 'order-confirmation';
+export type ViewState =
+  | 'home' | 'compare' | 'pizza-builder' | 'saved-pizzas'
+  | 'orders' | 'cart' | 'checkout' | 'admin-dashboard'
+  | 'how-it-works' | 'local-deals' | 'order-confirmation' | 'order-tracking'
+  | 'profile' | 'rewards' | 'notifications';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -11,82 +17,191 @@ interface SidebarProps {
   cartItemCount: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  isPartner: boolean;
-  currentUser: User | null;
-  onOpenAuth: () => void;
+  isStoreOwner?: boolean;
+  storeOwnerName?: string;
+  onStoreOwnerLogin?: () => void;
+  onStoreOwnerLogout?: () => void;
+  customerName?: string;
+  onCustomerLogout?: () => void;
 }
 
-export function SidebarNavigation({ currentView, onNavigate, cartItemCount, isOpen, setIsOpen, isPartner, currentUser, onOpenAuth }: SidebarProps) {
-  const navItems = [
-    { id: 'home' as ViewState, label: 'Home', icon: Home },
-    ...(currentUser && !isPartner ? [{ id: 'local-deals' as ViewState, label: 'Local Deals', icon: Tag }] : []),
-    { id: 'pizza-builder' as ViewState, label: 'Pizza Builder', icon: ChefHat },
-    { id: 'saved-pizzas' as ViewState, label: 'Favorites', icon: Heart },
-    { id: 'orders' as ViewState, label: 'Orders', icon: ShoppingBag },
-    { id: 'cart' as ViewState, label: 'Cart', icon: ShoppingCart, badge: cartItemCount },
-    ...(isPartner ? [{ id: 'admin-dashboard' as ViewState, label: 'Store Menu', icon: Store }] : []),
-    { id: 'how-it-works' as ViewState, label: 'How It Works', icon: Info },
-  ];
+const DIVIDER = '---';
+
+const NAV_SECTIONS = [
+  {
+    label: 'Discover',
+    items: [
+      { id: 'home', label: 'Home', icon: Home, desc: 'Stores, deals & pizza map' },
+      { id: 'compare', label: 'Compare Prices', icon: BarChart2, desc: 'Side-by-side pricing' },
+    ],
+  },
+  {
+    label: 'Build',
+    items: [
+      { id: 'pizza-builder', label: 'Pizza Builder', icon: ChefHat, desc: 'Design your perfect pizza' },
+    ],
+  },
+  {
+    label: 'My Account',
+    items: [
+      { id: 'orders', label: 'My Orders', icon: ShoppingBag, desc: 'Order history & reorder' },
+      { id: 'rewards', label: 'Rewards', icon: Gift, desc: 'Points & loyalty perks', badge: 'NEW' },
+      { id: 'local-deals', label: 'Deals & Alerts', icon: Tag, desc: 'Live deals + price alerts' },
+      { id: 'profile', label: 'My Profile', icon: User, desc: 'Preferences & address' },
+    ],
+  },
+  {
+    label: 'Info',
+    items: [
+      { id: 'how-it-works', label: 'How It Works', icon: Info, desc: 'Learn about MiSlice' },
+    ],
+  },
+] as const;
+
+export function SidebarNavigation({
+  currentView, onNavigate, cartItemCount, isOpen, setIsOpen,
+  isStoreOwner, storeOwnerName, onStoreOwnerLogin, onStoreOwnerLogout,
+  customerName, onCustomerLogout,
+}: SidebarProps) {
+  const go = (view: ViewState) => { onNavigate(view); setIsOpen(false); };
 
   return (
     <>
-      <button 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-stone-900/90 border border-stone-700/50 rounded-xl text-white backdrop-blur-md shadow-xl"
+      {/* Mobile hamburger */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-black/80 border border-white/10 rounded-xl text-white backdrop-blur-xl shadow-xl"
+        aria-label="Menu"
       >
         {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
+      {/* Mobile backdrop */}
       {isOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" 
-          onClick={() => setIsOpen(false)} 
-        />
+        <div className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsOpen(false)} />
       )}
 
       <aside className={`
         fixed top-0 bottom-0 left-0 z-40
-        w-64 bg-stone-950/80 backdrop-blur-xl border-r border-stone-800/50
-        flex flex-col p-4 transition-transform duration-500
+        w-64 bg-[#080808]/95 backdrop-blur-2xl border-r border-white/8
+        flex flex-col transition-transform duration-300
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="flex items-center gap-3 mb-10 px-2 pt-2 cursor-pointer" onClick={() => onNavigate('home')}>
-          <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-[0_0_20px_rgba(220,38,38,0.4)]">
-            MI
-          </div>
-          <span className="text-xl font-bold tracking-tight text-white font-sans">slice<span className="text-stone-500">.online</span></span>
-        </div>
 
-        <nav className="flex-1 space-y-2 overflow-y-auto pr-2 scrollbar-hide">
-          {navItems.map(item => {
-            const isActive = currentView === item.id;
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onNavigate(item.id);
-                  setIsOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative group
-                  ${isActive ? 'bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] text-white' : 'text-stone-400 hover:bg-stone-800/50 hover:text-white'}`}
-              >
-                <div className="relative">
-                  <Icon className={`w-5 h-5 ${isActive ? 'animate-pulse' : 'group-hover:scale-110 transition-transform'}`} />
-                  {item.badge && item.badge > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-lg border border-stone-900">
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
-                <span className="font-bold text-sm tracking-wide">{item.label}</span>
-              </button>
-            );
-          })}
+        {/* Logo */}
+        <button
+          onClick={() => go('home')}
+          className="flex items-center gap-3 px-5 py-5 border-b border-white/8 hover:bg-white/3 transition-colors"
+        >
+          <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,80,0,0.4)] shrink-0">
+            <Pizza className="w-5 h-5 text-white" />
+          </div>
+          <div className="text-left">
+            <span className="text-white font-black text-base tracking-tight">MiSlice</span>
+            <p className="text-[9px] text-stone-600 font-bold -mt-0.5 uppercase tracking-widest">Pizza Marketplace</p>
+          </div>
+        </button>
+
+        {/* Nav sections */}
+        <nav className="flex-1 overflow-y-auto no-scrollbar py-4 px-3 space-y-5">
+          {NAV_SECTIONS.map(section => (
+            <div key={section.label}>
+              <p className="text-[9px] font-black uppercase tracking-widest text-stone-600 px-3 mb-2">{section.label}</p>
+              <div className="space-y-0.5">
+                {section.items.map(item => {
+                  const Icon = item.icon;
+                  const active = currentView === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => go(item.id as ViewState)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${
+                        active
+                          ? 'bg-gradient-to-r from-red-600/90 to-orange-600/70 text-white shadow-[0_0_12px_rgba(220,38,38,0.35)]'
+                          : 'text-stone-400 hover:bg-white/6 hover:text-white'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-stone-500 group-hover:text-white'} transition-colors`} />
+                      <div className="flex-1 text-left min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold leading-tight">{item.label}</span>
+                          {'badge' in item && item.badge && (
+                            <span className="text-[8px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded-full shrink-0">{item.badge}</span>
+                          )}
+                        </div>
+                        {!active && (
+                          <p className="text-[9px] text-stone-600 group-hover:text-stone-500 transition-colors leading-tight mt-0.5 truncate">{item.desc}</p>
+                        )}
+                      </div>
+                      {active && <div className="w-1 h-4 bg-white/40 rounded-full shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
-        
-        <div className="mt-auto pt-4 border-t border-stone-800/50">
-           <p className="text-center text-stone-600 text-xs py-4 font-bold flex items-center justify-center gap-1"><Heart className="w-3 h-3 text-red-600" /> MiSlice © 2026</p>
+
+        {/* Footer */}
+        <div className="border-t border-white/8 p-3 space-y-1">
+          {isStoreOwner ? (
+            <>
+              <div className="bg-red-600/10 border border-red-500/20 rounded-xl px-3 py-2 mb-2">
+                <p className="text-[9px] font-black uppercase tracking-widest text-red-500 mb-0.5">Store Owner</p>
+                <p className="text-xs font-bold text-white truncate">{storeOwnerName}</p>
+              </div>
+              <button
+                onClick={() => go('admin-dashboard')}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-400 hover:text-white hover:bg-white/6 transition-colors text-sm font-bold"
+              >
+                <Store className="w-4 h-4" /> Store Dashboard
+              </button>
+              <button
+                onClick={onStoreOwnerLogout}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-stone-500 hover:text-red-400 hover:bg-red-500/10 text-xs font-bold transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out of Store
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Customer identity */}
+              <button
+                onClick={() => go('profile')}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/6 transition-colors group mb-1"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-black text-sm shrink-0">
+                  {(customerName || 'G').charAt(0).toUpperCase()}
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate">{customerName || 'Guest'}</p>
+                  <p className="text-[9px] text-stone-600">View profile</p>
+                </div>
+              </button>
+
+              {/* Store owner switch */}
+              <button
+                onClick={onStoreOwnerLogin}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-500 hover:text-white hover:bg-white/6 transition-colors group"
+              >
+                <Store className="w-4 h-4 group-hover:text-orange-400 transition-colors" />
+                <div className="text-left flex-1">
+                  <p className="text-sm font-bold text-stone-400 group-hover:text-white transition-colors">Store Owner?</p>
+                  <p className="text-[9px] text-stone-600">Switch to store dashboard</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-stone-700 group-hover:text-stone-400 transition-colors" />
+              </button>
+
+              {/* Sign out */}
+              <button
+                onClick={onCustomerLogout}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-stone-500 hover:text-red-400 hover:bg-red-500/10 text-xs font-bold transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
+              </button>
+            </>
+          )}
+          <p className="text-center text-stone-700 text-[9px] font-bold pt-1">MiSlice © 2026</p>
         </div>
       </aside>
     </>
