@@ -188,6 +188,71 @@ body {
   .blob { animation: none; }
 }
 
+/* ── Claymorphism (light, spacious theme) ─────────────────────────────────── */
+
+.clay-page {
+  background: #f3f5fb;
+}
+
+.clay {
+  background: #ffffff;
+  border-radius: 32px;
+  box-shadow:
+    10px 10px 30px rgba(176, 182, 204, 0.45),
+    -10px -10px 28px rgba(255, 255, 255, 0.95);
+}
+
+.clay-soft {
+  background: #fbfcff;
+  border-radius: 24px;
+  box-shadow:
+    6px 6px 18px rgba(176, 182, 204, 0.35),
+    -6px -6px 16px rgba(255, 255, 255, 0.9);
+}
+
+.clay-inset {
+  background: #eef1f8;
+  border-radius: 18px;
+  box-shadow:
+    inset 5px 5px 10px rgba(176, 182, 204, 0.5),
+    inset -5px -5px 10px rgba(255, 255, 255, 0.95);
+}
+
+.clay-btn {
+  border-radius: 18px;
+  box-shadow:
+    6px 6px 16px rgba(176, 182, 204, 0.5),
+    -5px -5px 14px rgba(255, 255, 255, 0.9);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.clay-btn:hover { transform: translateY(-2px); }
+.clay-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 4px 4px 9px rgba(0, 0, 0, 0.12), inset -4px -4px 9px rgba(255, 255, 255, 0.5);
+}
+
+.clay-accent {
+  background: linear-gradient(135deg, #ffd84d, #ffab2e);
+  border-radius: 18px;
+  box-shadow:
+    6px 6px 16px rgba(255, 171, 46, 0.4),
+    -5px -5px 14px rgba(255, 255, 255, 0.85);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.clay-accent:hover { transform: translateY(-2px); box-shadow: 8px 8px 22px rgba(255, 171, 46, 0.5), -5px -5px 14px rgba(255, 255, 255, 0.85); }
+.clay-accent:active { transform: translateY(1px); }
+
+/* Gentle floating for background characters */
+@keyframes minion-float {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50%      { transform: translateY(-16px) rotate(var(--rot, 0deg)); }
+}
+.minion-float { animation: minion-float var(--dur, 7s) ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .minion-float { animation: none; }
+}
+
 .light-theme {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 244 / var(--tw-bg-opacity)) !important;
