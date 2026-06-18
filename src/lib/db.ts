@@ -182,6 +182,11 @@ export async function setOrderStatus(orderId: string, orderStatus: string): Prom
   await updateDoc(doc(db, 'orders', orderId), { orderStatus, updatedAt: serverTimestamp() });
 }
 
+// Patch arbitrary fields on an order (e.g. prep time, accepted flag).
+export async function updateOrderFields(orderId: string, patch: Record<string, any>): Promise<void> {
+  await updateDoc(doc(db, 'orders', orderId), { ...patch, updatedAt: serverTimestamp() });
+}
+
 // Raw live subscription to a store's orders (rich customer Order shape).
 export function watchStoreRichOrders(storeId: string, cb: (orders: any[]) => void) {
   return onSnapshot(query(collection(db, 'orders'), where('storeId', '==', storeId)), (snap) => {
