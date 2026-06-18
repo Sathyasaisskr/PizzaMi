@@ -253,6 +253,48 @@ body {
   .minion-float { animation: none; }
 }
 
+/* ── Light-theme safety net ───────────────────────────────────────────────────
+   Inside the light claymorphism app (.clay-page), remap leftover dark-theme
+   surfaces to light and white/faint text to readable dark, so no font is
+   invisible. The dark store-owner dashboard is NOT a .clay-page, so it keeps
+   its own dark styling untouched. */
+
+/* White / very-light text → readable dark (blue-slate) */
+.clay-page .text-white { color: #1e293b !important; }
+.clay-page .text-stone-100,
+.clay-page .text-stone-200,
+.clay-page .text-stone-300 { color: #475569 !important; }
+
+/* Dark translucent cards → white clay */
+.clay-page [class*="bg-black"] {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+}
+.clay-page .bg-white\/4,
+.clay-page .bg-white\/5,
+.clay-page .bg-white\/6,
+.clay-page .bg-white\/8,
+.clay-page .bg-white\/10,
+.clay-page .bg-white\/15,
+.clay-page .bg-white\/20 { background-color: #eef1f8 !important; }
+
+/* Glass surfaces → white clay panels */
+.clay-page .glass,
+.clay-page .glass-soft,
+.clay-page .liquid-glass,
+.clay-page .liquid-glass-blue {
+  background: #ffffff !important;
+  border-color: rgba(120, 130, 160, 0.14) !important;
+  box-shadow: 8px 8px 24px rgba(176, 182, 204, 0.4), -8px -8px 22px rgba(255, 255, 255, 0.95) !important;
+}
+.clay-page .liquid-glass::before,
+.clay-page .liquid-glass::after,
+.clay-page .liquid-glass-blue::before,
+.clay-page .liquid-glass-blue::after { display: none !important; }
+
+/* Light-up dark borders */
+.clay-page [class*="border-white/"] { border-color: rgba(120, 130, 160, 0.16) !important; }
+
 .light-theme {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 244 / var(--tw-bg-opacity)) !important;

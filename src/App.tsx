@@ -339,8 +339,8 @@ export default function App() {
           {view === 'local-deals' && (
             <div className="w-full">
               <div className="mb-8 text-center pt-8">
-                <h1 className="text-3xl font-black text-white mb-2">Local Deals</h1>
-                <p className="text-stone-300">Discover handpicked deals from pizza shops near you.</p>
+                <h1 className="text-3xl font-black text-stone-800 mb-2">Local Deals</h1>
+                <p className="text-stone-500">Discover handpicked deals from pizza shops near you.</p>
               </div>
               <LocalDeals onAddToCart={addToCart} />
             </div>
@@ -373,31 +373,31 @@ export default function App() {
 
           {view === 'saved-pizzas' && (
             <div className="w-full max-w-5xl mx-auto py-8">
-              <h2 className="text-3xl font-black text-white mb-8">My Saved Pizzas</h2>
+              <h2 className="text-3xl font-black text-stone-800 mb-8">My Saved Pizzas</h2>
               {favorites.length === 0 ? (
-                <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 border-dashed">
-                  <Heart className="w-8 h-8 mx-auto text-stone-500 mb-4" />
-                  <p className="text-stone-400 font-bold">You haven't saved any pizzas yet.</p>
-                  <button onClick={() => setView('pizza-builder')} className="mt-4 text-red-500 font-bold text-sm hover:underline">Build one now</button>
+                <div className="clay bg-white text-center py-20 rounded-3xl">
+                  <Heart className="w-8 h-8 mx-auto text-stone-300 mb-4" />
+                  <p className="text-stone-500 font-bold">You haven't saved any pizzas yet.</p>
+                  <button onClick={() => setView('pizza-builder')} className="mt-4 text-amber-600 font-bold text-sm hover:underline">Build one now</button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {favorites.map(fav => (
-                    <div key={fav.id} className="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/10 relative group">
+                    <div key={fav.id} className="clay bg-white p-6 rounded-3xl relative group">
                       <button
                         onClick={() => deleteFavorite(fav.id)}
-                        className="absolute top-4 right-4 text-stone-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 text-sm font-bold"
+                        className="absolute top-4 right-4 text-stone-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 text-sm font-bold"
                       >
                         Remove
                       </button>
-                      <h3 className="font-bold text-xl text-white mb-2">{fav.name}</h3>
+                      <h3 className="font-bold text-xl text-stone-800 mb-2">{fav.name}</h3>
                       <p className="text-sm font-bold text-stone-400 mb-4">{fav.config.size} • {fav.config.crust}</p>
                       <div className="flex flex-wrap gap-1 mb-6">
                         {[...fav.config.meats, ...fav.config.veggies].map(m => (
-                          <span key={m} className="text-[10px] bg-white/10 text-stone-300 px-2 py-0.5 rounded font-bold uppercase">{m}</span>
+                          <span key={m} className="text-[10px] clay-inset text-stone-500 px-2 py-0.5 rounded font-bold uppercase">{m}</span>
                         ))}
                       </div>
-                      <button onClick={() => handleCompare(fav.config)} className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold py-2.5 rounded-xl shadow-md hover:from-orange-400 hover:to-red-500 flex items-center justify-center gap-2">
+                      <button onClick={() => handleCompare(fav.config)} className="clay-accent w-full text-stone-900 font-bold py-2.5 flex items-center justify-center gap-2">
                         <Search className="w-4 h-4" /> Order & Compare Prices
                       </button>
                     </div>
@@ -436,39 +436,38 @@ export default function App() {
                 <div className="absolute inset-0 bg-green-400 blur-xl opacity-20 rounded-full"></div>
                 <svg className="w-12 h-12 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
               </div>
-              <h2 className="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-lg">Order Placed!</h2>
+              <h2 className="text-4xl font-black text-stone-800 mb-4 tracking-tight">Order Placed!</h2>
 
-              <div className="bg-black/40 backdrop-blur-2xl rounded-[2rem] p-8 shadow-[0_15px_40px_rgba(0,0,0,0.5)] border border-white/10 text-left mt-8 mb-8 space-y-6 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none"></div>
-                <div className="relative z-10">
-                  <p className="text-xs font-black uppercase text-stone-500 tracking-widest mb-1">Store</p>
-                  <p className="text-xl font-black text-white">{currentOrder.storeName}</p>
+              <div className="clay bg-white rounded-[2rem] p-8 text-left mt-8 mb-8 space-y-6">
+                <div>
+                  <p className="text-xs font-black uppercase text-stone-400 tracking-widest mb-1">Store</p>
+                  <p className="text-xl font-black text-stone-800">{currentOrder.storeName}</p>
                 </div>
                 {currentOrder.items.length > 0 && (
-                  <div className="relative z-10">
-                    <p className="text-xs font-black uppercase text-stone-500 tracking-widest mb-1">Items</p>
-                    <p className="text-lg font-bold text-stone-300">{currentOrder.items[0].pizzaName}{currentOrder.items.length > 1 ? ` + ${currentOrder.items.length - 1} more` : ''}</p>
+                  <div>
+                    <p className="text-xs font-black uppercase text-stone-400 tracking-widest mb-1">Items</p>
+                    <p className="text-lg font-bold text-stone-600">{currentOrder.items[0].pizzaName}{currentOrder.items.length > 1 ? ` + ${currentOrder.items.length - 1} more` : ''}</p>
                   </div>
                 )}
-                <div className="relative z-10">
-                  <p className="text-xs font-black uppercase text-stone-500 tracking-widest mb-1">Delivery</p>
-                  <p className="text-lg font-bold text-stone-300 flex items-center gap-2">
+                <div>
+                  <p className="text-xs font-black uppercase text-stone-400 tracking-widest mb-1">Delivery</p>
+                  <p className="text-lg font-bold text-stone-600 flex items-center gap-2">
                     <span className="capitalize">{currentOrder.selectedDeliveryProvider}</span>
-                    <span className="text-white/20">•</span>
-                    <span className="text-green-400 font-black">ETA: {currentOrder.estimatedDeliveryTime}</span>
+                    <span className="text-stone-300">•</span>
+                    <span className="text-green-600 font-black">ETA: {currentOrder.estimatedDeliveryTime}</span>
                   </p>
                 </div>
-                <div className="relative z-10">
-                  <p className="text-xs font-black uppercase text-stone-500 tracking-widest mb-1">Total</p>
-                  <p className="text-3xl font-black text-white">${currentOrder.finalTotal.toFixed(2)}</p>
+                <div>
+                  <p className="text-xs font-black uppercase text-stone-400 tracking-widest mb-1">Total</p>
+                  <p className="text-3xl font-black text-stone-800">${currentOrder.finalTotal.toFixed(2)}</p>
                 </div>
               </div>
 
               <div className="flex gap-4 justify-center flex-wrap">
-                <button onClick={() => setView('orders')} className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-black py-4 px-8 rounded-2xl shadow-[0_0_30px_rgba(255,50,0,0.4)] transition-all hover:scale-[1.02] flex items-center gap-2 border border-orange-400/50">
+                <button onClick={() => setView('orders')} className="clay-accent text-stone-900 font-black py-4 px-8 flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5" /> View Order History
                 </button>
-                <button onClick={() => setView('home')} className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-2xl border border-white/10 transition-all">
+                <button onClick={() => setView('home')} className="clay-btn bg-white text-stone-700 font-bold py-4 px-8">
                   Back to Home
                 </button>
               </div>
@@ -477,28 +476,28 @@ export default function App() {
 
           {view === 'orders' && (
             <div className="w-full max-w-5xl mx-auto py-8">
-              <h2 className="text-3xl font-black text-white mb-8">Order History</h2>
+              <h2 className="text-3xl font-black text-stone-800 mb-8">Order History</h2>
               {pastOrders.length === 0 ? (
-                <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 border-dashed">
-                  <ShoppingBag className="w-8 h-8 mx-auto text-stone-500 mb-4" />
-                  <p className="text-stone-400 font-bold">No orders yet.</p>
-                  <button onClick={() => setView('pizza-builder')} className="mt-4 text-red-500 font-bold text-sm hover:underline">Build a pizza</button>
+                <div className="clay bg-white text-center py-20 rounded-3xl">
+                  <ShoppingBag className="w-8 h-8 mx-auto text-stone-300 mb-4" />
+                  <p className="text-stone-500 font-bold">No orders yet.</p>
+                  <button onClick={() => setView('pizza-builder')} className="mt-4 text-amber-600 font-bold text-sm hover:underline">Build a pizza</button>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {pastOrders.map(order => (
-                    <div key={order.id} className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10">
+                    <div key={order.id} className="clay bg-white rounded-3xl p-6">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <p className="font-black text-white text-lg">{order.storeName}</p>
+                          <p className="font-black text-stone-800 text-lg">{order.storeName}</p>
                           <p className="text-stone-400 text-sm">{new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}</p>
                         </div>
-                        <p className="font-black text-white text-xl">${order.finalTotal.toFixed(2)}</p>
+                        <p className="font-black text-stone-800 text-xl">${order.finalTotal.toFixed(2)}</p>
                       </div>
-                      <p className="text-stone-400 text-sm mb-4">{order.items.map(i => i.pizzaName).join(', ')}</p>
+                      <p className="text-stone-500 text-sm mb-4">{order.items.map(i => i.pizzaName).join(', ')}</p>
                       <button
                         onClick={() => reorder(order)}
-                        className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-bold py-2 px-6 rounded-xl text-sm transition-all"
+                        className="clay-accent text-stone-900 font-bold py-2 px-6 text-sm"
                       >
                         Reorder
                       </button>
@@ -529,11 +528,11 @@ export default function App() {
           {view === 'pizza-builder' && (
             <div className="w-full pt-4">
               <div className="mb-8 text-center">
-                <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[10px] font-black px-4 py-2 rounded-full mb-4">
+                <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-100 text-amber-600 text-[10px] font-black px-4 py-2 rounded-full mb-4">
                   ✦ Premium Pizza Builder
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-black text-white mb-2 tracking-tight">Build Your Perfect Pizza</h1>
-                <p className="text-stone-400 text-sm">Live prices from every store update as you customize.</p>
+                <h1 className="text-3xl sm:text-4xl font-black text-stone-800 mb-2 tracking-tight">Build Your Perfect Pizza</h1>
+                <p className="text-stone-500 text-sm">Live prices from every store update as you customize.</p>
               </div>
               <PremiumPizzaBuilder
                 currentConfig={pizzaConfig || { size: 'Large', crust: 'Hand Tossed', sauce: 'Robust Inspired Tomato Sauce', cheese: ['Mozzarella'], meats: [], veggies: [], extras: [], quantity: 1 }}
@@ -546,7 +545,7 @@ export default function App() {
                 <button
                   onClick={() => setView('compare')}
                   disabled={!(pizzaConfig?.crust)}
-                  className={`px-8 py-4 rounded-2xl text-lg font-black shadow-xl transition-all ${pizzaConfig?.crust ? 'bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white shadow-[0_0_25px_rgba(255,50,0,0.4)] border border-orange-400/50 hover:-translate-y-1' : 'bg-white/10 text-stone-500 border border-white/10 cursor-not-allowed'}`}
+                  className={`px-8 py-4 text-lg font-black transition-all ${pizzaConfig?.crust ? 'clay-accent text-stone-900' : 'clay-inset text-stone-400 cursor-not-allowed'}`}
                 >
                   Compare Prices Across All Stores →
                 </button>
@@ -557,21 +556,21 @@ export default function App() {
           {view === 'compare' && (
             <div className="w-full pt-4">
               <div className="mb-8 text-center flex flex-col items-center">
-                <h1 className="text-3xl font-black text-white mb-2">Compare Deals</h1>
-                <p className="text-stone-300 mb-6">See how your custom creation prices out across top stores.</p>
-                <button onClick={() => setView('pizza-builder')} className="text-sm font-bold text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-4 py-2 rounded-lg transition-colors">
+                <h1 className="text-3xl font-black text-stone-800 mb-2">Compare Deals</h1>
+                <p className="text-stone-500 mb-6">See how your custom creation prices out across top stores.</p>
+                <button onClick={() => setView('pizza-builder')} className="text-sm font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-lg transition-colors">
                   ← Edit pizza configuration
                 </button>
               </div>
 
               {pizzaConfig && (
                 <div className="mb-8 z-10 flex justify-center w-full animate-in fade-in duration-500">
-                  <div className="inline-flex bg-white/10 backdrop-blur-md rounded-2xl p-1 shadow-sm border border-white/10">
+                  <div className="clay-inset inline-flex rounded-2xl p-1">
                     {(['auto', 'store-delivery', 'pickup'] as const).map((type, i) => (
                       <button
                         key={type}
                         onClick={() => setDeliveryType(type)}
-                        className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${deliveryType === type ? 'bg-white text-stone-900' : 'text-stone-300 hover:text-white'}`}
+                        className={`px-4 py-2 text-sm font-semibold rounded-xl transition-colors ${deliveryType === type ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-800'}`}
                       >
                         {type === 'auto' ? 'Best Match' : type === 'store-delivery' ? 'Store Delivery' : 'Pickup'}
                       </button>
@@ -590,10 +589,10 @@ export default function App() {
                   currentConfig={pizzaConfig}
                 />
               ) : (
-                <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 border-dashed max-w-2xl mx-auto">
-                  <Search className="w-8 h-8 mx-auto text-stone-500 mb-4" />
-                  <p className="text-stone-400 font-bold mb-4">Build a pizza first to compare prices.</p>
-                  <button onClick={() => setView('pizza-builder')} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold transition-colors">Start Building</button>
+                <div className="clay bg-white text-center py-20 rounded-3xl max-w-2xl mx-auto">
+                  <Search className="w-8 h-8 mx-auto text-stone-300 mb-4" />
+                  <p className="text-stone-500 font-bold mb-4">Build a pizza first to compare prices.</p>
+                  <button onClick={() => setView('pizza-builder')} className="clay-accent text-stone-900 px-6 py-3 font-bold">Start Building</button>
                 </div>
               )}
             </div>
