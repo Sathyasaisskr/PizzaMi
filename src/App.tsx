@@ -298,7 +298,7 @@ export default function App() {
   if (isStoreOwner) {
     return (
       <AppProvider>
-        <StoreOwnerDashboard storeName={storeOwnerName} onLogout={handleSignOut} />
+        <StoreOwnerDashboard storeId={profile?.storeId || profile?.uid || ''} storeName={storeOwnerName} onLogout={handleSignOut} />
       </AppProvider>
     );
   }

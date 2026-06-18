@@ -177,6 +177,18 @@ export async function updateOrderStatus(orderId: string, status: OrderDoc['statu
   await updateDoc(doc(db, 'orders', orderId), { status, updatedAt: serverTimestamp() });
 }
 
+// Customer orders use the rich `orderStatus` field ('placed' | 'preparing' | …).
+export async function setOrderStatus(orderId: string, orderStatus: string): Promise<void> {
+  await updateDoc(doc(db, 'orders', orderId), { orderStatus, updatedAt: serverTimestamp() });
+}
+
+// Raw live subscription to a store's orders (rich customer Order shape).
+export function watchStoreRichOrders(storeId: string, cb: (orders: any[]) => void) {
+  return onSnapshot(query(collection(db, 'orders'), where('storeId', '==', storeId)), (snap) => {
+    cb(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+}
+
 /** Live subscription to a store's incoming orders (for the owner dashboard). */
 export function watchStoreOrders(storeId: string, cb: (orders: OrderDoc[]) => void) {
   const constraints: QueryConstraint[] = [where('storeId', '==', storeId)];
